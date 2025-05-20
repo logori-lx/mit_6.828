@@ -48,17 +48,44 @@ w_mepc(uint64 x)
 #define SSTATUS_SIE (1L << 1)  // Supervisor Interrupt Enable
 #define SSTATUS_UIE (1L << 0)  // User Interrupt Enable
 
+//读取RISC-V架构中sstatus寄存器并且存储到C变量x中并将其返回
+// 即sstatus → 通用寄存器 → C 变量
+// static inline 表示这个函数是静态内联的，会直接插入调用时的位置
+// 并且调用时不会产生函数调用开销
 static inline uint64
 r_sstatus()
 {
   uint64 x;
+  // asm 引入汇编代码
+  // volatile 告诉编译器不要优化这段汇编代码，确保每次调用都会实际执行寄存器读取
+  // csrr RISC-V 的 "Control Status Register Read" 指令
+  // %0 表示第一个输出操作数（即变量 x）
+  // sstatus：要读取的特权寄存器
+  // : 分隔汇编模板和输出约束条件
+  // "=r" (x) 表示将结果输出到一个通用寄存器，然后存入变量 x
+  // 其中 "=r"为约束条件
+  // "=" 表示这是一个输出操作数
+  // "r" 表示这个操作数需要用通用寄存器来保存
   asm volatile("csrr %0, sstatus" : "=r" (x) );
   return x;
 }
+//用C变量x的值写入RISC-V架构中sstatus寄存器
+//即C 变量 → 通用寄存器 → sstatus
+// static inline 表示这个函数是静态内联的，会直接插入调用时的位置
+// 并且调用时不会产生函数调用开销
 
 static inline void 
 w_sstatus(uint64 x)
 {
+  // asm 引入汇编代码
+  // volatile 告诉编译器不要优化这段汇编代码，确保每次调用都会实际执行寄存器读取
+  // csrw：RISC-V 的 "Control Status Register Write" 指令
+  // sstatus：要写入的特权寄存器
+  // %0：指代第一个输入操作数（这里作为源值）
+  // 第一个:分隔汇编模板和输出约束（这里无输出）
+  // 第二个:分隔输出约束和输入约束
+  // "r"：约束条件，表示使用通用寄存器来传递这个值
+  //(x)：关联的 C 变量
   asm volatile("csrw sstatus, %0" : : "r" (x));
 }
 
@@ -291,19 +318,24 @@ intr_on()
   w_sstatus(r_sstatus() | SSTATUS_SIE);
 }
 
-// disable device interrupts
-static inline void
-intr_off()
-{
-  w_sstatus(r_sstatus() & ~SSTATUS_SIE);
-}
 
 // are device interrupts enabled?
 static inline int
 intr_get()
 {
+  //读取sstatus寄存器的值到x中
   uint64 x = r_sstatus();
+  //返回内核模式下是否中断使能
   return (x & SSTATUS_SIE) != 0;
+}
+
+// disable device interrupts
+static inline void
+intr_off()
+{
+	//读取sstatus寄存器的值并且将SSTATUS_SIE清空再写回sstatus寄存器中
+	//实现关中断的目的
+  w_sstatus(r_sstatus() & ~SSTATUS_SIE);
 }
 
 static inline uint64
@@ -324,6 +356,7 @@ r_fp()
 
 // read and write tp, the thread pointer, which xv6 uses to hold
 // this core's hartid (core number), the index into cpus[].
+//读取RISC-V架构下，tp(thread pointer)寄存器的值
 static inline uint64
 r_tp()
 {

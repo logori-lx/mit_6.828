@@ -29,7 +29,16 @@ fetchstr(uint64 addr, char *buf, int max)
     return -1;
   return strlen(buf);
 }
-
+//RISC-V规定了系统调用的参数需要依序存储在a0-a5寄存器，
+//并且还需要将系统调用号存储在a7寄存器中，即如果调用了系统调用write(fd,buf,len)，
+//则在寄存器层面，其存储内容如下:
+//- a0:fd(文件描述符)
+//- a1:buf(缓冲区指针)
+//- a2:count(字节数)
+//- a7:SYS_write(系统调用号)
+// 结构体proc的成员trapframe的成员a0-a5即对应寄存器a0-a5，
+// 这也是为什么argraw函数中如果入参n>5时会panic，
+// 因为存储参数的寄存器只有a0-a5。
 static uint64
 argraw(int n)
 {
@@ -53,6 +62,7 @@ argraw(int n)
 }
 
 // Fetch the nth 32-bit system call argument.
+
 void
 argint(int n, int *ip)
 {

@@ -79,6 +79,8 @@ mycpu(void)
 }
 
 // Return the current struct proc *, or zero if none.
+// myproc request a cpu, then return the proc struct
+// 关中断，并且将一个cpu分配给进程
 struct proc*
 myproc(void)
 {
@@ -547,6 +549,7 @@ forkret(void)
 void
 sleep(void *chan, struct spinlock *lk)
 {
+  
   struct proc *p = myproc();
   
   // Must acquire p->lock in order to

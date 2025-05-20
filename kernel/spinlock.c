@@ -46,6 +46,7 @@ acquire(struct spinlock *lk)
 void
 release(struct spinlock *lk)
 {
+  //若当前cpu没有锁自选锁，即没有调用acquire，那么需要报错
   if(!holding(lk))
     panic("release");
 
@@ -67,11 +68,12 @@ release(struct spinlock *lk)
   //   s1 = &lk->locked
   //   amoswap.w zero, zero, (s1)
   __sync_lock_release(&lk->locked);
-
+  //与acquire相配对，开中断
   pop_off();
 }
 
 // Check whether this cpu is holding the lock.
+// and whether the lock is locked
 // Interrupts must be off.
 int
 holding(struct spinlock *lk)
@@ -84,7 +86,6 @@ holding(struct spinlock *lk)
 // push_off/pop_off are like intr_off()/intr_on() except that they are matched:
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
 // are initially off, then push_off, pop_off leaves them off.
-
 void
 push_off(void)
 {
@@ -96,15 +97,22 @@ push_off(void)
   mycpu()->noff += 1;
 }
 
+// pop_off与push_off必须成对使用
 void
 pop_off(void)
 {
   struct cpu *c = mycpu();
+  //如果当前不处于中断之中，则报错，因为pop_off的调用是为了
+  //开中断，如果没处于中断之中，则必然是出问题了
   if(intr_get())
     panic("pop_off - interruptible");
+  //如果之前push_off的嵌套层数小于1，则报错，因为push_off和pop_off必须成对
   if(c->noff < 1)
     panic("pop_off");
+  //嵌套层数减一
   c->noff -= 1;
+  //如果调用第一个push_off之前，是未关终端状态
+  //则开终端，否则保留原本的中断状态
   if(c->noff == 0 && c->intena)
     intr_on();
 }

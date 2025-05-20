@@ -53,10 +53,15 @@ sys_sleep(void)
 {
   int n;
   uint ticks0;
-
+  //获取系统调用的第一个参数
+  //如如果是系统调用sleep(1)
+  //则会将1这个参数传给n
   argint(0, &n);
+  //若n小于0，不可能会sleep负数的时间
+  //所以sleep 0
   if(n < 0)
     n = 0;
+
   acquire(&tickslock);
   ticks0 = ticks;
   while(ticks - ticks0 < n){
