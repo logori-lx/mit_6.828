@@ -6,7 +6,7 @@
 int 
 main(int argc, char*argv[]){
     if(argc != 2){
-        fprintf(2, "Usage: sleep NUMBER(centisecond)\n");
+        LOG_ERROR("Usage: sleep NUMBER(centisecond)\n");
         exit(1);
     }
     int centiSecond = atoi(argv[1]);

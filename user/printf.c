@@ -155,3 +155,11 @@ printf(const char *fmt, ...)
   va_start(ap, fmt);
   vprintf(1, fmt, ap);
 }
+
+// 从路径中提取纯文件名
+// 用于log
+const char* get_filename(const char* path) {
+    const char* p = strchr(path, '/');
+    return p ? p + 1 : path;
+}
+

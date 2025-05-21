@@ -41,3 +41,16 @@ void *memcpy(void *, const void *, uint);
 // umalloc.c
 void* malloc(uint);
 void free(void*);
+
+const char* get_filename(const char* path);
+#define LOG_INFO(...) do { \
+    fprintf(1, "%s: ", get_filename(__FILE__)); \
+    fprintf(1, __VA_ARGS__); \
+    fprintf(1, "\n"); \
+} while(0)
+
+#define LOG_ERROR(...) do { \
+    fprintf(2, "%s: ", get_filename(__FILE__)); \
+    fprintf(2, __VA_ARGS__); \
+    fprintf(2, "\n"); \
+} while(0)
