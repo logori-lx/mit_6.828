@@ -410,6 +410,9 @@ wait(uint64 addr)
         if(pp->state == ZOMBIE){
           // Found one.
           pid = pp->pid;
+          //if addr is not 0, copy the exit status of child process from xstate structure to addr variable
+          //then exit.
+          //if addr is 0, it will just release the resources of child process then exit.
           if(addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
                                   sizeof(pp->xstate)) < 0) {
             release(&pp->lock);
